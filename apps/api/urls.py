@@ -2,8 +2,7 @@ from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
-
-from django.urls import path
+from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 from apps.accounts.views import (
     UserViewSet,
@@ -24,24 +23,22 @@ from apps.hotel.views import (
 )
 from apps.api.views import APIRootView
 
-
 app_name = "api"
 
 router = DefaultRouter()
 router.register(r"users", UserViewSet)
 router.register(r"groups", GroupViewSet)
 router.register(r"permissions", PermissionViewSet)
-router.register(r"hotels", HotelViewSet)
-router.register(r"guests", GuestViewSet)
-router.register(r"staffs", StaffViewSet)
-router.register(r"roomtypes", RoomTypeViewSet)
-router.register(r"rooms", RoomViewSet, basename="room")
-router.register(r"bookings", BookingViewSet, basename="booking")
-router.register(r"payments", PaymentViewSet, basename="payment")
+router.register(r"hotels", HotelViewSet, basename="hotel")
+router.register(r"staffs", StaffViewSet, basename="staffs")
+router.register(r"guests", GuestViewSet, basename="guest")
+router.register(r"room-types", RoomTypeViewSet, basename="room_types")
+router.register(r"rooms", RoomViewSet, basename="rooms")
+router.register(r"bookings", BookingViewSet, basename="bookings")
+router.register(r"payments", PaymentViewSet, basename="payments")
 
 urlpatterns = [
     path("", APIRootView.as_view(), name="api-root-view"),
-    # path('auth/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path(
         "auth/signin/", UserTokenObtainPairView.as_view(), name="auth-signin"
     ),

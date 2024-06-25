@@ -1,4 +1,5 @@
-from rest_framework import permissions, viewsets
+from common.viewsets.base_viewsets import BaseModelViewSet
+from common.mixins import SoftDeleteMixin
 from apps.hotel.models import (
     Hotel,
     Guest,
@@ -19,43 +20,43 @@ from apps.hotel.serializers import (
 )
 
 
-class HotelViewSet(viewsets.ModelViewSet):
+class HotelViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = Hotel.objects.all()
     serializer_class = HotelSerializer
 
 
-class GuestViewSet(viewsets.ModelViewSet):
+class GuestViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
 
 
-class StaffViewSet(viewsets.ModelViewSet):
+class StaffViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
 
 
-class RoomTypeViewSet(viewsets.ModelViewSet):
+class RoomTypeViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = RoomType.objects.all()
     serializer_class = RoomTypeSerializer
 
 
-class RoomViewSet(viewsets.ModelViewSet):
+class RoomViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
 
-class BookingViewSet(viewsets.ModelViewSet):
+class BookingViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = RoomType.objects.all()
     serializer_class = BookingSerializer
 
 
-class PaymentViewSet(viewsets.ModelViewSet):
+class PaymentViewSet(BaseModelViewSet, SoftDeleteMixin):
 
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer

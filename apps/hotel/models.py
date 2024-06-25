@@ -7,12 +7,12 @@ from common.models.base_models import BaseModel
 
 # Create your models here.
 class Hotel(BaseModel):
-    name = models.CharField(max_length=225)
+    name = models.CharField(max_length=225, unique=True)
     address = models.CharField(max_length=225)
-    village = models.CharField(max_length=225)
-    district = models.CharField(max_length=225)
+    village = models.CharField(max_length=225, unique=True)
+    district = models.CharField(max_length=225, unique=True)
     province = models.CharField(max_length=225)
-    phone = models.CharField(max_length=225)
+    phone = models.CharField(max_length=225, unique=True)
     email = models.EmailField(max_length=225)
     stars = models.PositiveSmallIntegerField()
     check_in_time = models.TimeField()
@@ -23,13 +23,15 @@ class Hotel(BaseModel):
 
 
 class Staff(BaseModel):
-    first_name = models.CharField(max_length=225)
-    last_name = models.CharField(max_length=225)
-    email = models.EmailField(max_length=225)
-    phone = models.CharField(max_length=225)
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=225, unique=True)
+    last_name = models.CharField(max_length=225, unique=True)
+    email = models.EmailField(max_length=225, unique=True)
+    phone = models.CharField(max_length=225, unique=True)
+    hotel = models.ForeignKey(
+        Hotel, on_delete=models.CASCADE, related_name="hotel"
+    )
     date_of_birth = models.DateTimeField()
-    position = models.CharField(max_length=225)
+    position = models.CharField(max_length=225, unique=True)
     salary = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     hire_date = models.DateField()
 
@@ -38,10 +40,10 @@ class Staff(BaseModel):
 
 
 class Guest(BaseModel):
-    first_name = models.CharField(max_length=225)
+    first_name = models.CharField(max_length=225, unique=True)
     last_name = models.CharField(max_length=225)
     date_of_birth = models.DateField()
-    email = models.EmailField(max_length=225)
+    email = models.EmailField(max_length=225, unique=True)
     phone = models.CharField(max_length=225)
     address = models.CharField(max_length=225)
 
@@ -50,7 +52,7 @@ class Guest(BaseModel):
 
 
 class RoomType(BaseModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     description = models.CharField(max_length=255)
     price_per_night = models.DecimalField(
         max_digits=9, decimal_places=2, default=0

@@ -10,43 +10,43 @@ from apps.hotel.models import (
 )
 
 
-class HotelSerializer(serializers.HyperlinkedModelSerializer):
+class HotelSerializer(serializers.ModelSerializer):
     class Meta:
         model = Hotel
         fields = "__all__"
 
 
-class GuestSerializer(serializers.HyperlinkedModelSerializer):
+class GuestSerializer(serializers.ModelSerializer):
     class Meta:
         model = Guest
         fields = "__all__"
 
 
-class StaffSerializer(serializers.HyperlinkedModelSerializer):
+class StaffSerializer(serializers.ModelSerializer):
     class Meta:
         model = Staff
         fields = "__all__"
 
 
-class RoomTypeSerializer(serializers.HyperlinkedModelSerializer):
+class RoomTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoomType
         fields = "__all__"
 
 
-class RoomSerializer(serializers.HyperlinkedModelSerializer):
+class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = "__all__"
 
 
-class BookingSerializer(serializers.HyperlinkedModelSerializer):
+class BookingSerializer(serializers.ModelSerializer):
     class Meta:
         model = Booking
         fields = "__all__"
 
 
-class PaymentSerializer(serializers.HyperlinkedModelSerializer):
+class PaymentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Payment
         fields = "__all__"

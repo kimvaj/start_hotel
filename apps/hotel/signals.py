@@ -7,17 +7,14 @@ from .models import Booking, Room, Payment
 
 @receiver(pre_save, sender=Booking)
 def calculate_total_price(sender, instance, **kwargs):
-    # Calculate the number of nights
     number_of_nights = (instance.check_out_date - instance.check_in_date).days
-    # Get the price per night for the room
     price_per_night = instance.room.room_type.price_per_night
-    # Calculate the total price
     instance.total_price = number_of_nights * price_per_night
 
 
 @receiver(pre_save, sender=Booking)
 def check_room_availability(sender, instance, **kwargs):
-    if instance.pk:  # If booking is being updated, skip availability check
+    if instance.pk:
         return
     overlapping_bookings = Booking.objects.filter(
         room=instance.room,
@@ -33,7 +30,6 @@ def check_room_availability(sender, instance, **kwargs):
 @receiver(post_save, sender=Booking)
 def update_room_status_on_booking(sender, instance, created, **kwargs):
     if created:
-        # Update room status to occupied
         room = instance.room
         room.status = Room.OCCUPIED
         room.save()
@@ -41,7 +37,6 @@ def update_room_status_on_booking(sender, instance, created, **kwargs):
 
 @receiver(pre_delete, sender=Booking)
 def update_room_status_on_booking_deletion(sender, instance, **kwargs):
-    # Update room status to available when a booking is deleted
     room = instance.room
     room.status = Room.AVAILABLE
     room.save()
@@ -49,7 +44,6 @@ def update_room_status_on_booking_deletion(sender, instance, **kwargs):
 
 @receiver(post_save, sender=Payment)
 def update_booking_payment_status(sender, instance, created, **kwargs):
-    # Update booking status based on payment
     booking = instance.booking
     total_paid = sum(
         payment.amount for payment in booking.payment_booking.all()

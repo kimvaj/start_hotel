@@ -16,7 +16,7 @@ class APIRootView(APIView):
                 "refresh_token": self.request.build_absolute_uri(
                     reverse("api:token_refresh")
                 ),
-                # Assuming you have an endpoint for 'auth-me'
+                # Add 'auth-me' endpoint if it exists
                 # "auth-me": self.request.build_absolute_uri(reverse("api:auth-me")),
             },
             "users": self.request.build_absolute_uri(reverse("api:user-list")),
@@ -29,25 +29,23 @@ class APIRootView(APIView):
             "hotels": self.request.build_absolute_uri(
                 reverse("api:hotel-list")
             ),
+            "staffs": self.request.build_absolute_uri(
+                reverse("api:staffs-list")
+            ),
             "guests": self.request.build_absolute_uri(
                 reverse("api:guest-list")
             ),
-            "staffs": self.request.build_absolute_uri(
-                reverse("api:staff-list")
+            "room_types": self.request.build_absolute_uri(
+                reverse("api:room_types-list")
             ),
-            "roomtypes": self.request.build_absolute_uri(
-                reverse("api:roomtype-list")
+            "rooms": self.request.build_absolute_uri(
+                reverse("api:rooms-list")
             ),
-            "rooms": self.request.build_absolute_uri(reverse("api:room-list")),
             "bookings": self.request.build_absolute_uri(
-                reverse("api:booking-list")
+                reverse("api:bookings-list")
             ),
             "payments": self.request.build_absolute_uri(
-                reverse("api:payment-list")
+                reverse("api:payments-list")
             ),
         }
         return Response(data)
-
-
-# 'logout': reverse('api:logout', request=request, format=format),
-# 'password_change': reverse('api:password_change', request=request, format=format),
