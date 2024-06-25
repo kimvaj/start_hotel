@@ -22,9 +22,7 @@ def check_room_availability(sender, instance, **kwargs):
         check_out_date__gt=instance.check_in_date,
     )
     if overlapping_bookings.exists():
-        raise ValidationError(
-            "This room is already booked for the selected dates."
-        )
+        raise ValidationError("This room is already booked.")
 
 
 @receiver(post_save, sender=Booking)

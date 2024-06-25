@@ -1,4 +1,160 @@
-//in models
+from rest_framework import serializers
+from django.utils import timezone
+from apps.hotel.models import (
+    Hotel,
+    Guest,
+    Staff,
+    Room,
+    RoomType,
+    Booking,
+    Payment,
+)
+
+
+class HotelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hotel
+        fields = "__all__"
+
+
+class GuestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Guest
+        fields = "__all__"
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Staff
+        fields = "__all__"
+
+
+class RoomTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomType
+        fields = "__all__"
+
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = "__all__"
+
+
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = "__all__"
+        read_only_fields = ["total_price"]
+
+    def valiadate(self, data):
+        check_in_data = data.get("check_in_data")
+        check_out_data = data.get("check_out_data")
+        room = data.get("room")
+
+        if check_in_data and check_out_data < timezone.now().data():
+            raise serializers.ValidationError(
+                {"check_in_date": "Check-in date can not be the past."}
+            )
+        if check_in_data and check_out_data <= timezone.now().data():
+            raise serializers.ValidationError(
+                {
+                    "check_in_date": "Check-out date must not be after the check in date."
+                }
+            )
+        if room == Room.OCCUPIED:
+            raise serializers.ValidationError(
+                {"check_in_date": "This room is already booked."}
+            )
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = "__all__"
+        read_only_fields = ["amount"]
+
+
+// in views 
+from common.viewsets.base_viewsets import BaseModelViewSet
+from common.mixins import SoftDeleteMixin
+from django.db import transaction
+from django.utils import timezone
+from apps.hotel.models import (
+    Hotel,
+    Guest,
+    Staff,
+    RoomType,
+    Room,
+    Booking,
+    Payment,
+)
+from apps.hotel.serializers import (
+    HotelSerializer,
+    GuestSerializer,
+    StaffSerializer,
+    RoomTypeSerializer,
+    RoomSerializer,
+    BookingSerializer,
+    PaymentSerializer,
+)
+
+
+class HotelViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Hotel.objects.all()
+    serializer_class = HotelSerializer
+
+
+class GuestViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+
+class StaffViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Staff.objects.all()
+    serializer_class = StaffSerializer
+
+
+class RoomTypeViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = RoomType.objects.all()
+    serializer_class = RoomTypeSerializer
+
+
+class RoomViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+
+
+class BookingViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+
+    def create(self, request, *args, **kwargs):
+        payment_method = request.data.get(
+            "payment_method", Payment.PAYMENT_METHOD_CASH
+        )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        with transaction.atomic():
+            self.perform_create(serializer)
+            instance = serializer.instance
+
+            # Create payment upon successful booking
+            Payment.objects.create(
+                booking=instance,
+                amount=instance.total_price,
+                payment_date=timezone.now(),
+                payment_method=payment_method,  # Use provided payment method or default to cash
+            )
+
+
+class PaymentViewSet(BaseModelViewSet, SoftDeleteMixin):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+
+// in models
 from django.db import models
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
@@ -10,10 +166,10 @@ from common.models.base_models import BaseModel
 class Hotel(BaseModel):
     name = models.CharField(max_length=225, unique=True)
     address = models.CharField(max_length=225)
-    village = models.CharField(max_length=225)
-    district = models.CharField(max_length=225)
+    village = models.CharField(max_length=225, unique=True)
+    district = models.CharField(max_length=225, unique=True)
     province = models.CharField(max_length=225)
-    phone = models.CharField(max_length=225)
+    phone = models.CharField(max_length=225, unique=True)
     email = models.EmailField(max_length=225)
     stars = models.PositiveSmallIntegerField()
     check_in_time = models.TimeField()
@@ -24,13 +180,15 @@ class Hotel(BaseModel):
 
 
 class Staff(BaseModel):
-    first_name = models.CharField(max_length=225)
-    last_name = models.CharField(max_length=225)
-    email = models.EmailField(max_length=225)
-    phone = models.CharField(max_length=225)
-    hotel = models.ForeignKey(Hotel, on_delete=models.CASCADE)
+    first_name = models.CharField(max_length=225, unique=True)
+    last_name = models.CharField(max_length=225, unique=True)
+    email = models.EmailField(max_length=225, unique=True)
+    phone = models.CharField(max_length=225, unique=True)
+    hotel = models.ForeignKey(
+        Hotel, on_delete=models.CASCADE, related_name="hotel"
+    )
     date_of_birth = models.DateTimeField()
-    position = models.CharField(max_length=225)
+    position = models.CharField(max_length=225, unique=True)
     salary = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     hire_date = models.DateField()
 
@@ -39,10 +197,10 @@ class Staff(BaseModel):
 
 
 class Guest(BaseModel):
-    first_name = models.CharField(max_length=225)
+    first_name = models.CharField(max_length=225, unique=True)
     last_name = models.CharField(max_length=225)
     date_of_birth = models.DateField()
-    email = models.EmailField(max_length=225)
+    email = models.EmailField(max_length=225, unique=True)
     phone = models.CharField(max_length=225)
     address = models.CharField(max_length=225)
 
@@ -51,7 +209,7 @@ class Guest(BaseModel):
 
 
 class RoomType(BaseModel):
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, unique=True)
     description = models.CharField(max_length=255)
     price_per_night = models.DecimalField(
         max_digits=9, decimal_places=2, default=0
@@ -146,188 +304,3 @@ class Payment(BaseModel):
         choices=PAYMENT_METHOD_CHOICES,
         default=PAYMENT_METHOD_CASH,
     )
-
-
-// in serializers
-from rest_framework import serializers
-from apps.hotel.models import (
-    Hotel,
-    Guest,
-    Staff,
-    Room,
-    RoomType,
-    Booking,
-    Payment,
-)
-
-
-class HotelSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Hotel
-        fields = "__all__"
-
-
-class GuestSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Guest
-        fields = "__all__"
-
-
-class StaffSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Staff
-        fields = "__all__"
-
-
-class RoomTypeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = RoomType
-        fields = "__all__"
-
-
-class RoomSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Room
-        fields = "__all__"
-
-
-class BookingSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Booking
-        fields = "__all__"
-
-
-class PaymentSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Payment
-        fields = "__all__"
-        read_only_fields = ["amount"]
-
-
-// in views
-from common.viewsets.base_viewsets import BaseModelViewSet
-from common.mixins import SoftDeleteMixin
-from apps.hotel.models import (
-    Hotel,
-    Guest,
-    Staff,
-    RoomType,
-    Room,
-    Booking,
-    Payment,
-)
-from apps.hotel.serializers import (
-    HotelSerializer,
-    GuestSerializer,
-    StaffSerializer,
-    RoomTypeSerializer,
-    RoomSerializer,
-    BookingSerializer,
-    PaymentSerializer,
-)
-
-
-class HotelViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = Hotel.objects.all()
-    serializer_class = HotelSerializer
-
-
-class GuestViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = Guest.objects.all()
-    serializer_class = GuestSerializer
-
-
-class StaffViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = Staff.objects.all()
-    serializer_class = StaffSerializer
-
-
-class RoomTypeViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = RoomType.objects.all()
-    serializer_class = RoomTypeSerializer
-
-
-class RoomViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = Room.objects.all()
-    serializer_class = RoomSerializer
-
-
-class BookingViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = RoomType.objects.all()
-    serializer_class = BookingSerializer
-
-
-class PaymentViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = Payment.objects.all()
-    serializer_class = PaymentSerializer
-
-
-// in signals
-from django.db.models.signals import post_save, pre_save, pre_delete
-from django.dispatch import receiver
-from django.core.exceptions import ValidationError
-from django.utils import timezone
-from .models import Booking, Room, Payment
-
-
-@receiver(pre_save, sender=Booking)
-def calculate_total_price(sender, instance, **kwargs):
-    # Calculate the number of nights
-    number_of_nights = (instance.check_out_date - instance.check_in_date).days
-    # Get the price per night for the room
-    price_per_night = instance.room.room_type.price_per_night
-    # Calculate the total price
-    instance.total_price = number_of_nights * price_per_night
-
-
-@receiver(pre_save, sender=Booking)
-def check_room_availability(sender, instance, **kwargs):
-    if instance.pk:  # If booking is being updated, skip availability check
-        return
-    overlapping_bookings = Booking.objects.filter(
-        room=instance.room,
-        check_in_date__lt=instance.check_out_date,
-        check_out_date__gt=instance.check_in_date,
-    )
-    if overlapping_bookings.exists():
-        raise ValidationError(
-            "This room is already booked for the selected dates."
-        )
-
-
-@receiver(post_save, sender=Booking)
-def update_room_status_on_booking(sender, instance, created, **kwargs):
-    if created:
-        # Update room status to occupied
-        room = instance.room
-        room.status = Room.OCCUPIED
-        room.save()
-
-
-@receiver(pre_delete, sender=Booking)
-def update_room_status_on_booking_deletion(sender, instance, **kwargs):
-    # Update room status to available when a booking is deleted
-    room = instance.room
-    room.status = Room.AVAILABLE
-    room.save()
-
-
-@receiver(post_save, sender=Payment)
-def update_booking_payment_status(sender, instance, created, **kwargs):
-    # Update booking status based on payment
-    booking = instance.booking
-    total_paid = sum(
-        payment.amount for payment in booking.payment_booking.all()
-    )
-    if total_paid >= booking.total_price:
-        booking.status = "paid"
-    else:
-        booking.status = "unpaid"
-    booking.save()

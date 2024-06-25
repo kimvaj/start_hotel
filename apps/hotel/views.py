@@ -1,5 +1,10 @@
 from common.viewsets.base_viewsets import BaseModelViewSet
 from common.mixins import SoftDeleteMixin
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
+from common.viewsets.basecrud import BaseCRUDViewSet
 from apps.hotel.models import (
     Hotel,
     Guest,
@@ -20,43 +25,58 @@ from apps.hotel.serializers import (
 )
 
 
-class HotelViewSet(BaseModelViewSet, SoftDeleteMixin):
-
+class HotelViewSet(BaseCRUDViewSet):
     queryset = Hotel.objects.all()
     serializer_class = HotelSerializer
 
 
-class GuestViewSet(BaseModelViewSet, SoftDeleteMixin):
-
+class GuestViewSet(BaseCRUDViewSet):
     queryset = Guest.objects.all()
     serializer_class = GuestSerializer
 
 
-class StaffViewSet(BaseModelViewSet, SoftDeleteMixin):
-
+class StaffViewSet(BaseCRUDViewSet):
     queryset = Staff.objects.all()
     serializer_class = StaffSerializer
 
 
-class RoomTypeViewSet(BaseModelViewSet, SoftDeleteMixin):
-
+class RoomTypeViewSet(BaseCRUDViewSet):
     queryset = RoomType.objects.all()
     serializer_class = RoomTypeSerializer
 
 
-class RoomViewSet(BaseModelViewSet, SoftDeleteMixin):
-
+class RoomViewSet(BaseCRUDViewSet):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
 
-class BookingViewSet(BaseModelViewSet, SoftDeleteMixin):
-
-    queryset = RoomType.objects.all()
+class BookingViewSet(BaseCRUDViewSet):
+    queryset = Booking.objects.all()
     serializer_class = BookingSerializer
 
+    def create(self, request, *args, **kwargs):
+        payment_method = request.data.get(
+            "payment_method", Payment.PAYMENT_METHOD_CASH
+        )
 
-class PaymentViewSet(BaseModelViewSet, SoftDeleteMixin):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
+        with transaction.atomic():
+            self.perform_create(serializer)
+            instance = serializer.instance
+
+            # Create payment upon successful booking
+            Payment.objects.create(
+                booking=instance,
+                amount=instance.total_price,
+                payment_date=timezone.now(),
+                payment_method=payment_method,
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PaymentViewSet(BaseCRUDViewSet):
     queryset = Payment.objects.all()
     serializer_class = PaymentSerializer
