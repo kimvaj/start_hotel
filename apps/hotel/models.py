@@ -71,6 +71,7 @@ class Room(BaseModel):
         (AVAILABLE, "Available"),
         (OCCUPIED, "Occupied"),
     ]
+
     hotel = models.ForeignKey(
         Hotel, on_delete=models.CASCADE, related_name="room_hotel"
     )

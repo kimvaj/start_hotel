@@ -1,3 +1,4 @@
+# apps/hotel/apps.py
 from django.apps import AppConfig
 
 
@@ -7,4 +8,4 @@ class HotelConfig(AppConfig):
 
     def ready(self):
         import apps.hotel.signals
-        import apps.hotel.tasks
+        import apps.hotel.handlers

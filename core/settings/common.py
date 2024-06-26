@@ -2,6 +2,7 @@ from pathlib import Path
 from datetime import timedelta
 from dotenv import load_dotenv
 import os
+
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
@@ -19,6 +20,8 @@ DJANGO_APPS = [
 THIRD_PARTY_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
+    "django_celery_beat",
+    "django_celery_results",
 ]
 
 PROJECT_APPS = [
@@ -164,12 +167,12 @@ CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 # Define Celery Beat Schedule
 CELERY_BEAT_SCHEDULE = {
-    'update-room-statuses-every-day': {
-        'task': 'apps.hotel.tasks.update_room_statuses',
-        'schedule': crontab(minute="*"),  # Executes daily at midnight
+    "update-room-statuses-every-day": {
+        "task": "apps.hotel.tasks.update_room_statuses",
+        "schedule": crontab(minute="*"),  # Executes daily at midnight
     },
-    'check-booking-payments-every-hour': {
-        'task': 'apps.hotel.tasks.check_booking_payments',
-        'schedule': crontab(minute="*"),  # Executes every hour
+    "check-booking-payments-every-hour": {
+        "task": "apps.hotel.tasks.check_booking_payments",
+        "schedule": crontab(minute="*"),  # Executes every hour
     },
 }

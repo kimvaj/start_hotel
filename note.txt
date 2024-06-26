@@ -1,0 +1,563 @@
+//in models
+from django.db import models
+from django.core.exceptions import ValidationError
+from django.utils.translation import gettext_lazy as _
+from django.utils import timezone
+from common.models.base_models import BaseModel
+
+
+# Create your models here.
+class Hotel(BaseModel):
+    name = models.CharField(max_length=225, unique=True)
+    address = models.CharField(max_length=225)
+    village = models.CharField(max_length=225, unique=True)
+    district = models.CharField(max_length=225, unique=True)
+    province = models.CharField(max_length=225)
+    phone = models.CharField(max_length=225, unique=True)
+    email = models.EmailField(max_length=225)
+    stars = models.PositiveSmallIntegerField()
+    check_in_time = models.TimeField()
+    check_out_time = models.TimeField()
+
+    def __str__(self):
+        return self.name
+
+
+class Staff(BaseModel):
+    first_name = models.CharField(max_length=225, unique=True)
+    last_name = models.CharField(max_length=225, unique=True)
+    email = models.EmailField(max_length=225, unique=True)
+    phone = models.CharField(max_length=225, unique=True)
+    hotel = models.ForeignKey(
+        Hotel, on_delete=models.CASCADE, related_name="hotel"
+    )
+    date_of_birth = models.DateTimeField()
+    position = models.CharField(max_length=225, unique=True)
+    salary = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    hire_date = models.DateField()
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+class Guest(BaseModel):
+    first_name = models.CharField(max_length=225, unique=True)
+    last_name = models.CharField(max_length=225)
+    date_of_birth = models.DateField()
+    email = models.EmailField(max_length=225, unique=True)
+    phone = models.CharField(max_length=225)
+    address = models.CharField(max_length=225)
+
+    def __str__(self):
+        return f"{self.first_name} {self.last_name}"
+
+
+class RoomType(BaseModel):
+    name = models.CharField(max_length=255, unique=True)
+    description = models.CharField(max_length=255)
+    price_per_night = models.DecimalField(
+        max_digits=9, decimal_places=2, default=0
+    )
+    capacity = models.PositiveSmallIntegerField()
+
+    def __str__(self):
+        return self.name
+
+
+class Room(BaseModel):
+    AVAILABLE = "available"
+    OCCUPIED = "occupied"
+
+    STATUS_CHOICES = [
+        (AVAILABLE, "Available"),
+        (OCCUPIED, "Occupied"),
+    ]
+
+    hotel = models.ForeignKey(
+        Hotel, on_delete=models.CASCADE, related_name="room_hotel"
+    )
+    room_type = models.ForeignKey(
+        RoomType, on_delete=models.CASCADE, related_name="room_type"
+    )
+    room_number = models.CharField(max_length=15, unique=True)
+    status = models.CharField(
+        max_length=10, choices=STATUS_CHOICES, default=AVAILABLE
+    )
+
+    def __str__(self):
+        return self.room_number
+
+
+class Booking(BaseModel):
+    guest = models.ForeignKey(
+        Guest, on_delete=models.CASCADE, related_name="booking_guest"
+    )
+    room = models.ForeignKey(
+        Room, on_delete=models.CASCADE, related_name="booking_room"
+    )
+    check_in_date = models.DateField()
+    check_out_date = models.DateField()
+    total_price = models.DecimalField(
+        max_digits=9, decimal_places=2, default=0
+    )
+
+    def __str__(self):
+        return f"{self.guest} booking for {self.room}"
+
+    def clean(self):
+        super().clean()
+
+        if self.check_out_date <= self.check_in_date:
+            raise ValidationError(
+                {
+                    "check_out_date": _(
+                        "Check-out date must be after check-in date."
+                    )
+                }
+            )
+
+        if self.check_in_date < timezone.now().date():
+            raise ValidationError(
+                {"check_in_date": _("Check-in date cannot be in the past.")}
+            )
+
+    def save(self, *args, **kwargs):
+        # Validate the model
+        self.full_clean()
+        super().save(*args, **kwargs)
+
+
+class Payment(BaseModel):
+    PAYMENT_METHOD_CASH = "cash"
+    PAYMENT_METHOD_CREDIT_CARD = "credit_card"
+    PAYMENT_METHOD_DEBIT_CARD = "debit_card"
+    PAYMENT_METHOD_BANK_TRANSFER = "bank_transfer"
+
+    PAYMENT_METHOD_CHOICES = [
+        (PAYMENT_METHOD_CASH, "Cash"),
+        (PAYMENT_METHOD_CREDIT_CARD, "Credit Card"),
+        (PAYMENT_METHOD_DEBIT_CARD, "Debit Card"),
+        (PAYMENT_METHOD_BANK_TRANSFER, "Bank Transfer"),
+    ]
+    booking = models.ForeignKey(
+        Booking, on_delete=models.CASCADE, related_name="payment_booking"
+    )
+    amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
+    payment_date = models.DateField()
+    payment_method = models.CharField(
+        max_length=20,
+        choices=PAYMENT_METHOD_CHOICES,
+        default=PAYMENT_METHOD_CASH,
+    )
+
+//in serializers
+from rest_framework import serializers
+from django.utils import timezone
+from apps.hotel.models import (
+    Hotel,
+    Guest,
+    Staff,
+    Room,
+    RoomType,
+    Booking,
+    Payment,
+)
+
+
+class HotelSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Hotel
+        fields = "__all__"
+
+
+class GuestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Guest
+        fields = "__all__"
+
+
+class StaffSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Staff
+        fields = "__all__"
+
+
+class RoomTypeSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoomType
+        fields = "__all__"
+
+
+class RoomSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Room
+        fields = "__all__"
+
+
+class BookingSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Booking
+        fields = "__all__"
+        read_only_fields = ["total_price"]
+
+    def validate(self, data):
+        check_in_date = data.get("check_in_date")
+        check_out_date = data.get("check_out_date")
+        room = data.get("room")
+
+        if check_in_date and check_out_date <= timezone.now().date():
+            raise serializers.ValidationError(
+                {
+                    "check_out_date": "Check-out date must be after the check-in date."
+                }
+            )
+        if check_in_date and check_in_date < timezone.now().date():
+            raise serializers.ValidationError(
+                {"check_in_date": "Check-in date cannot be in the past."}
+            )
+        if room.status == Room.OCCUPIED:
+            raise serializers.ValidationError(
+                {"room": "This room is already booked."}
+            )
+
+        return data
+
+
+class PaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Payment
+        fields = "__all__"
+        read_only_fields = ["amount"]
+
+// in views
+from common.viewsets.base_viewsets import BaseModelViewSet
+from common.mixins import SoftDeleteMixin
+from django.db import transaction
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
+from common.viewsets.basecrud import BaseCRUDViewSet
+from apps.hotel.models import (
+    Hotel,
+    Guest,
+    Staff,
+    RoomType,
+    Room,
+    Booking,
+    Payment,
+)
+from apps.hotel.serializers import (
+    HotelSerializer,
+    GuestSerializer,
+    StaffSerializer,
+    RoomTypeSerializer,
+    RoomSerializer,
+    BookingSerializer,
+    PaymentSerializer,
+)
+
+
+class HotelViewSet(BaseCRUDViewSet):
+    queryset = Hotel.objects.all()
+    serializer_class = HotelSerializer
+
+
+class GuestViewSet(BaseCRUDViewSet):
+    queryset = Guest.objects.all()
+    serializer_class = GuestSerializer
+
+
+class StaffViewSet(BaseCRUDViewSet):
+    queryset = Staff.objects.all()
+    serializer_class = StaffSerializer
+
+
+class RoomTypeViewSet(BaseCRUDViewSet):
+    queryset = RoomType.objects.all()
+    serializer_class = RoomTypeSerializer
+
+
+class RoomViewSet(BaseCRUDViewSet):
+    queryset = Room.objects.all()
+    serializer_class = RoomSerializer
+
+    def create(self, request, *args, **kwargs):
+        payment_method = request.data.get(
+            "payment_method", Payment.PAYMENT_METHOD_CASH
+        )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            self.perform_create(serializer)
+            instance = serializer.instance
+
+            # Create payment upon successful booking
+            Payment.objects.create(
+                booking=instance,
+                amount=instance.total_price,
+                payment_date=timezone.now(),
+                payment_method=payment_method,
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class BookingViewSet(BaseCRUDViewSet):
+    queryset = Booking.objects.all()
+    serializer_class = BookingSerializer
+
+    def create(self, request, *args, **kwargs):
+        payment_method = request.data.get(
+            "payment_method", Payment.PAYMENT_METHOD_CASH
+        )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            self.perform_create(serializer)
+            instance = serializer.instance
+
+            # Create payment upon successful booking
+            Payment.objects.create(
+                booking=instance,
+                amount=instance.total_price,
+                payment_date=timezone.now(),
+                payment_method=payment_method,
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+
+class PaymentViewSet(BaseCRUDViewSet):
+    queryset = Payment.objects.all()
+    serializer_class = PaymentSerializer
+
+// in apps.py 
+# apps/hotel/apps.py
+from django.apps import AppConfig
+
+
+class HotelConfig(AppConfig):
+    default_auto_field = "django.db.models.BigAutoField"
+    name = "apps.hotel"
+
+    def ready(self):
+        import apps.hotel.signals
+        import apps.hotel.handlers
+
+// in handlers
+# apps/hotel/handlers.py
+from django.db.models.signals import post_migrate
+from django.dispatch import receiver
+from django_celery_beat.models import PeriodicTask, CrontabSchedule
+from django.utils import timezone
+
+
+@receiver(post_migrate)
+def schedule_tasks(sender, **kwargs):
+    schedule, created = CrontabSchedule.objects.get_or_create(
+        minute="*/1",  # every minute for testing purposes
+        hour="*",
+        day_of_week="*",
+        day_of_month="*",
+        month_of_year="*",
+    )
+
+    PeriodicTask.objects.get_or_create(
+        crontab=schedule,
+        name="Update room statuses",
+        task="apps.hotel.tasks.update_room_statuses",
+    )
+
+    PeriodicTask.objects.get_or_create(
+        crontab=schedule,
+        name="Check booking payments",
+        task="apps.hotel.tasks.check_booking_payments",
+    )
+
+// in siganls
+from django.db.models.signals import post_save, pre_save, pre_delete
+from django.dispatch import receiver
+from django.core.exceptions import ValidationError
+from django.utils import timezone
+from .models import Booking, Room, Payment
+
+
+@receiver(pre_save, sender=Booking)
+def calculate_total_price(sender, instance, **kwargs):
+    number_of_nights = (instance.check_out_date - instance.check_in_date).days
+    price_per_night = instance.room.room_type.price_per_night
+    instance.total_price = number_of_nights * price_per_night
+
+
+@receiver(pre_save, sender=Booking)
+def check_room_availability(sender, instance, **kwargs):
+    if instance.pk:
+        return
+    overlapping_bookings = Booking.objects.filter(
+        room=instance.room,
+        check_in_date__lt=instance.check_out_date,
+        check_out_date__gt=instance.check_in_date,
+    )
+    if overlapping_bookings.exists():
+        raise ValidationError("This room is already booked.")
+
+
+@receiver(post_save, sender=Booking)
+def update_room_status_on_booking(sender, instance, created, **kwargs):
+    if created:
+        room = instance.room
+        room.status = Room.OCCUPIED
+        room.save()
+
+
+@receiver(pre_delete, sender=Booking)
+def update_room_status_on_booking_deletion(sender, instance, **kwargs):
+    room = instance.room
+    room.status = Room.AVAILABLE
+    room.save()
+
+
+@receiver(post_save, sender=Payment)
+def update_booking_payment_status(sender, instance, created, **kwargs):
+    booking = instance.booking
+    total_paid = sum(
+        payment.amount for payment in booking.payment_booking.all()
+    )
+    if total_paid >= booking.total_price:
+        booking.status = "paid"
+    else:
+        booking.status = "unpaid"
+    booking.save()
+
+// in tasks
+# apps/hotel/tasks.py
+from celery import shared_task
+from django.utils import timezone
+from .models import Room, Booking
+
+
+@shared_task
+def update_room_statuses():
+    today = timezone.now().date()
+    # Find bookings that have ended
+    ended_bookings = Booking.objects.filter(
+        check_out_date__lt=today, room__status=Room.OCCUPIED
+    )
+    for booking in ended_bookings:
+        room = booking.room
+        room.status = Room.AVAILABLE
+        room.save()
+
+
+@shared_task
+def check_booking_payments():
+    for booking in Booking.objects.all():
+        total_paid = sum(
+            payment.amount for payment in booking.payment_booking.all()
+        )
+        if total_paid >= booking.total_price:
+            booking.status = "paid"
+        else:
+            booking.status = "unpaid"
+        booking.save()
+// in database
+// in room
+[
+	{
+		"id": 1,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:53:25.607475+07:00",
+		"updated_at": "2024-06-25T17:04:03.248116+07:00",
+		"room_number": "1",
+		"status": "occupied",
+		"hotel": 1,
+		"room_type": 1
+	},
+	{
+		"id": 20,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:57:56.687449+07:00",
+		"updated_at": "2024-06-25T16:57:56.687449+07:00",
+		"room_number": "16",
+		"status": "available",
+		"hotel": 1,
+		"room_type": 2
+	},
+	{
+		"id": 21,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:58:00.450133+07:00",
+		"updated_at": "2024-06-25T19:21:10.254112+07:00",
+		"room_number": "17",
+		"status": "occupied",
+		"hotel": 1,
+		"room_type": 2
+	},
+	{
+		"id": 22,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:58:02.915004+07:00",
+		"updated_at": "2024-06-25T16:58:02.915004+07:00",
+		"room_number": "18",
+		"status": "available",
+		"hotel": 1,
+		"room_type": 2
+	},
+	{
+		"id": 23,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:58:15.218558+07:00",
+		"updated_at": "2024-06-25T19:20:55.887272+07:00",
+		"room_number": "19",
+		"status": "occupied",
+		"hotel": 1,
+		"room_type": 2
+	},
+	{
+		"id": 24,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T16:58:20.357969+07:00",
+		"updated_at": "2024-06-25T19:19:27.624241+07:00",
+		"room_number": "20",
+		"status": "occupied",
+		"hotel": 1,
+		"room_type": 2
+	}
+]
+// in booking 
+[
+	{
+		"id": 1,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T17:04:03.244638+07:00",
+		"updated_at": "2024-06-26T09:24:00.029455+07:00",
+		"check_in_date": "2024-06-26",
+		"check_out_date": "2024-06-28",
+		"total_price": "180000.00",
+		"guest": 1,
+		"room": 1
+	},
+	{
+		"id": 2,
+		"is_deleted": false,
+		"deleted_at": null,
+		"created_at": "2024-06-25T19:19:27.620239+07:00",
+		"updated_at": "2024-06-26T09:24:00.053420+07:00",
+		"check_in_date": "2024-06-26",
+		"check_out_date": "2024-06-28",
+		"total_price": "240000.00",
+		"guest": 1,
+		"room": 18
+	}
+]

@@ -49,6 +49,28 @@ class RoomViewSet(BaseCRUDViewSet):
     queryset = Room.objects.all()
     serializer_class = RoomSerializer
 
+    def create(self, request, *args, **kwargs):
+        payment_method = request.data.get(
+            "payment_method", Payment.PAYMENT_METHOD_CASH
+        )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        with transaction.atomic():
+            self.perform_create(serializer)
+            instance = serializer.instance
+
+            # Create payment upon successful booking
+            Payment.objects.create(
+                booking=instance,
+                amount=instance.total_price,
+                payment_date=timezone.now(),
+                payment_method=payment_method,
+            )
+
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 class BookingViewSet(BaseCRUDViewSet):
     queryset = Booking.objects.all()
