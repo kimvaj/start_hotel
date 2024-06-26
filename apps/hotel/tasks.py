@@ -6,15 +6,15 @@ from datetime import date
 
 
 @shared_task
-def update_room_statuses(custom_date=None):
-    today = custom_date or timezone.now().date()
-    ended_bookings = Booking.objects.filter(
-        check_out_date__lt=today, room__status=Room.OCCUPIED
-    )
-    for booking in ended_bookings:
+def update_room_status():
+    today = timezone.now().date()
+    expired_bookings = Booking.objects.filter(check_out_date__lt=today, room__status=Room.OCCUPIED)
+
+    for booking in expired_bookings:
         room = booking.room
         room.status = Room.AVAILABLE
         room.save()
+
 
 
 @shared_task

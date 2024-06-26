@@ -6,7 +6,11 @@ import os
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
+
 SECRET_KEY = os.getenv("SECRET_KEY")
+ALLOWED_HOSTS = os.getenv("ALLOWED_HOSTS").split(",")
+CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")
+CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 
 DJANGO_APPS = [
     "django.contrib.admin",
@@ -93,9 +97,7 @@ ROOT_URLCONF = "core.urls"
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [
-            os.path.join(BASE_DIR, "templates")
-        ],  # Add your templates directory here
+        "DIRS": [],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -160,10 +162,11 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 
-from celery.schedules import crontab
 
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")  # Use Redis as the broker
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
+from celery.schedules import crontab
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
 
 # Define Celery Beat Schedule
 CELERY_BEAT_SCHEDULE = {
