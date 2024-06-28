@@ -4,13 +4,11 @@ from django.core.exceptions import ValidationError
 from django.utils import timezone
 from .models import Booking, Room, Payment
 
-
 @receiver(pre_save, sender=Booking)
 def calculate_total_price(sender, instance, **kwargs):
     number_of_nights = (instance.check_out_date - instance.check_in_date).days
     price_per_night = instance.room.room_type.price_per_night
     instance.total_price = number_of_nights * price_per_night
-
 
 @receiver(pre_save, sender=Booking)
 def check_room_availability(sender, instance, **kwargs):
@@ -24,7 +22,6 @@ def check_room_availability(sender, instance, **kwargs):
     if overlapping_bookings.exists():
         raise ValidationError("This room is already booked.")
 
-
 @receiver(post_save, sender=Booking)
 def update_room_status_on_booking(sender, instance, created, **kwargs):
     if created:
@@ -32,13 +29,11 @@ def update_room_status_on_booking(sender, instance, created, **kwargs):
         room.status = Room.OCCUPIED
         room.save()
 
-
 @receiver(pre_delete, sender=Booking)
 def update_room_status_on_booking_deletion(sender, instance, **kwargs):
     room = instance.room
     room.status = Room.AVAILABLE
     room.save()
-
 
 @receiver(post_save, sender=Payment)
 def update_booking_payment_status(sender, instance, created, **kwargs):

@@ -7,26 +7,34 @@ class HasAnyPermission(permissions.BasePermission):
 
     def has_permission(self, request, view):
         # Check if the user has any of the required permissions
-        return any(request.user.has_perm(permission) for permission in self.required_permissions)
+        return any(
+            request.user.has_perm(permission)
+            for permission in self.required_permissions
+        )
 
 
 class UserPermissions(permissions.BasePermission):
     def has_permission(self, request, view):
+        # Allow access if the user is a superuser
         if request.user.is_superuser:
             return True
 
-        if view.action in ['list', 'retrieve']:
-            # Check if the user has the "view_user" permission for "GET" methods
-            # return request.user.has_perm('auth.view_user')
+        # Define a mapping of view actions to permission codenames
+        action_permissions = {
+            "list": "view_user",  # 'list' action requires 'view_user' permission
+            "retrieve": "view_user",  # 'retrieve' action requires 'view_user' permission
+            "create": "add_user",  # 'create' action requires 'add_user' permission
+            "update": "change_user",  # 'update' action requires 'change_user' permission
+            "destroy": "delete_user",  # 'destroy' action requires 'delete_user' permission
+        }
 
-            # Check if the user is in the group that has "view_user" permission for "GET" methods
-            return request.user.groups.filter(permissions__codename='view_user').exists()
-        elif view.action == 'create':
-            return request.user.groups.filter(permissions__codename='add_user').exists()
-        elif view.action == 'update':
-            return request.user.groups.filter(permissions__codename='change_user').exists()
-        elif view.action == 'destroy':
-            return request.user.groups.filter(permissions__codename='delete_user').exists()
-        else:
-            # Default to not allowing other actions
-            return False
+        # Get the required permission codename for the current action, if any
+        required_permission = action_permissions.get(view.action)
+        if required_permission:
+            # Check if the user is in a group with the required permission
+            return request.user.groups.filter(
+                permissions__codename=required_permission
+            ).exists()
+
+        # Default to not allowing actions not listed in the mapping
+        return False

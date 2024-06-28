@@ -8,4 +8,3 @@ class HotelConfig(AppConfig):
 
     def ready(self):
         import apps.hotel.signals
-        import apps.hotel.handlers

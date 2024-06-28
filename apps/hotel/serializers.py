@@ -39,6 +39,8 @@ class RoomSerializer(serializers.ModelSerializer):
     class Meta:
         model = Room
         fields = "__all__"
+        def get_sequential_id(self, instance):
+            return instance.id
 
 
 class BookingSerializer(serializers.ModelSerializer):
