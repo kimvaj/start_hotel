@@ -31,6 +31,7 @@ THIRD_PARTY_APPS = [
 PROJECT_APPS = [
     "apps.accounts",
     "apps.hotel",
+    # "apps.resetpwd",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS
@@ -55,10 +56,8 @@ REST_FRAMEWORK = {
         "rest_framework.authentication.BasicAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
     ],
-    # 'DEFAULT_FILTER_BACKENDS': [
-    #     'django_filters.rest_framework.DjangoFilterBackend',
-    #     'rest_framework.filters.OrderingFilter',
-    # ],
+    # "DEFAULT_PAGINATION_CLASS": "common.pagination.DynamicPagination",
+    # "PAGE_SIZE": 100,
 }
 
 SIMPLE_JWT = {
@@ -156,7 +155,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 # MEDIA_ROOT: This is the directory where user uploaded media files will be saved.
 MEDIA_URL = "/media/"
-MEDIA_ROOT = BASE_DIR / "mediafiles"
+
+# Path where media is stored
+MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
+
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field
@@ -166,20 +168,41 @@ DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 AUTH_USER_MODEL = "accounts.User"
 
 
-
 CELERY_BROKER_URL = os.getenv("CELERY_BROKER_URL")  # Use Redis as the broker
 CELERY_RESULT_BACKEND = os.getenv("CELERY_RESULT_BACKEND")
 from celery.schedules import crontab
-CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
 # Define Celery Beat Schedule
 CELERY_BEAT_SCHEDULE = {
     "update-room-statuses-every-day": {
-        "task": "apps.hotel.tasks.update_room_statuses",
-        "schedule": crontab(minute="*"),  # Executes daily at midnight
+        "task": "apps.hotel.tasks.update_room_status",
+        "schedule": crontab(minute="*"),
+    }
+}
+# Email configuration (example)
+EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+EMAIL_HOST = "smtp.gmail.com"
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "kaliforlinux26@gmail.com")
+EMAIL_HOST_PASSWORD = os.environ.get(
+    "EMAIL_HOST_PASSWORD", "zwrj nqul emsb swvl"
+)
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
+
+
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {
+        "console": {
+            "class": "logging.StreamHandler",
+        },
     },
-    "check-booking-payments-every-hour": {
-        "task": "apps.hotel.tasks.check_booking_payments",
-        "schedule": crontab(minute="*"),  # Executes every hour
+    "root": {
+        "handlers": ["console"],
+        "level": "DEBUG",
     },
 }

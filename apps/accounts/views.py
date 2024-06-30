@@ -118,7 +118,6 @@ class GroupViewSet(BaseModelViewSet):
     queryset = Group.objects.all()
     serializer_class = GroupSerializer
 
-
 class PermissionViewSet(BaseModelViewSet):
     queryset = Permission.objects.all()
     serializer_class = PermissionSerializer

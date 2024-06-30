@@ -53,6 +53,8 @@ class UserManager(BaseUserManager, SoftDeleteManager):
 
 class User(AbstractUser, BaseModel):
     username = None
+    image = models.ImageField(upload_to="images")
+
     email = models.EmailField(_("email address"), unique=True)
 
     objects = UserManager()
