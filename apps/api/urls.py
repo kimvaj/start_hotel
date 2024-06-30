@@ -19,6 +19,7 @@ from apps.hotel.views import (
     PaymentViewSet,
 )
 from apps.resetpwd.views import (
+    ChangePasswordView,
     RequestPasswordResetEmail,
     PasswordTokenCheckAPI,
     SetNewPasswordAPIView,
@@ -63,6 +64,11 @@ urlpatterns = [
         "password-reset/complete/",
         SetNewPasswordAPIView.as_view(),
         name="set_new_password",
+    ),
+    path(
+        "change-password/",
+        ChangePasswordView.as_view(),
+        name="change-password",
     ),
 ]
 

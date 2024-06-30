@@ -5,7 +5,10 @@ from django.utils.http import urlsafe_base64_decode, urlsafe_base64_encode
 from rest_framework import generics, status
 from rest_framework.response import Response
 from django.contrib.auth import get_user_model
-from .serializers import (
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.views import APIView
+from apps.resetpwd.serializers import (
+    ChangePasswordSerializer,
     ResetPasswordEmailRequestSerializer,
     SetNewPasswordSerializer,
 )
@@ -86,3 +89,37 @@ class SetNewPasswordAPIView(generics.GenericAPIView):
             {"success": True, "message": "Password reset successful"},
             status=status.HTTP_200_OK,
         )
+
+
+class ChangePasswordView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request):
+        serializer = ChangePasswordSerializer(data=request.data)
+        if serializer.is_valid():
+            user = request.user
+            old_password = serializer.data.get("old_password")
+            new_password1 = serializer.data.get("new_password1")
+            new_password2 = serializer.data.get("new_password2")
+
+            if not user.check_password(old_password):
+                return Response(
+                    {"old_password": ["Wrong password."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            if new_password1 != new_password2:
+                return Response(
+                    {"new_password2": ["Passwords do not match."]},
+                    status=status.HTTP_400_BAD_REQUEST,
+                )
+
+            # Set new password
+            user.set_password(new_password1)
+            user.save()
+            return Response(
+                {"message": "Password successfully updated."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

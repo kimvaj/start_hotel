@@ -51,3 +51,9 @@ class SetNewPasswordSerializer(serializers.Serializer):
             raise AuthenticationFailed("The user does not exist", 404)
         except Exception as e:
             raise AuthenticationFailed(f"Unexpected error: {str(e)}", 500)
+
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True)
+    new_password1 = serializers.CharField(required=True)
+    new_password2 = serializers.CharField(required=True)

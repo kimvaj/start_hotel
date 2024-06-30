@@ -51,6 +51,9 @@ class APIRootView(APIView):
                 "set_new_password": self.request.build_absolute_uri(
                     reverse("api:set_new_password")
                 ),
+                "change_password": self.request.build_absolute_uri(
+                    reverse("api:change-password")
+                ),
             },
             "User": {
                 "users": self.request.build_absolute_uri(
