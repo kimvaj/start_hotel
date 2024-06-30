@@ -5,6 +5,8 @@ import os
 
 load_dotenv()
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
+from django.core.mail import send_mail
+from django.conf import settings
 
 
 SECRET_KEY = os.getenv("SECRET_KEY")
@@ -31,7 +33,7 @@ THIRD_PARTY_APPS = [
 PROJECT_APPS = [
     "apps.accounts",
     "apps.hotel",
-    # "apps.resetpwd",
+    "apps.resetpwd",
 ]
 
 INSTALLED_APPS = DJANGO_APPS + THIRD_PARTY_APPS + PROJECT_APPS
@@ -197,12 +199,17 @@ LOGGING = {
     "version": 1,
     "disable_existing_loggers": False,
     "handlers": {
-        "console": {
-            "class": "logging.StreamHandler",
+        "file": {
+            "level": "ERROR",
+            "class": "logging.FileHandler",
+            "filename": "errors.log",
         },
     },
-    "root": {
-        "handlers": ["console"],
-        "level": "DEBUG",
+    "loggers": {
+        "django": {
+            "handlers": ["file"],
+            "level": "ERROR",
+            "propagate": True,
+        },
     },
 }

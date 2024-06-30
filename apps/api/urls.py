@@ -1,9 +1,6 @@
-from rest_framework_simplejwt.views import (
-    TokenObtainPairView,
-    TokenRefreshView,
-)
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
+from django.contrib.auth import views as auth_views
 from apps.accounts.views import (
     UserViewSet,
     UserRegisterView,
@@ -21,7 +18,16 @@ from apps.hotel.views import (
     BookingViewSet,
     PaymentViewSet,
 )
+from apps.resetpwd.views import (
+    RequestPasswordResetEmail,
+    PasswordTokenCheckAPI,
+    SetNewPasswordAPIView,
+)
 from apps.api.views import APIRootView
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 app_name = "api"
 
@@ -39,15 +45,24 @@ router.register(r"payments", PaymentViewSet, basename="payments")
 
 urlpatterns = [
     path("", APIRootView.as_view(), name="api-root-view"),
+    path("signin/", UserTokenObtainPairView.as_view(), name="auth-signin"),
+    path("register/", UserRegisterView.as_view(), name="auth-register"),
+    path("token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
+    path("token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path(
-        "auth/signin/", UserTokenObtainPairView.as_view(), name="auth-signin"
+        "request-reset-email/",
+        RequestPasswordResetEmail.as_view(),
+        name="request_reset_email",
     ),
-    path("auth/register/", UserRegisterView.as_view(), name="auth-register"),
     path(
-        "api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"
+        "password-reset/confirm/<uidb64>/<token>/",
+        PasswordTokenCheckAPI.as_view(),
+        name="password_token_check",
     ),
     path(
-        "api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"
+        "password-reset/complete/",
+        SetNewPasswordAPIView.as_view(),
+        name="set_new_password",
     ),
 ]
 
