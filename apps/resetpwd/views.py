@@ -1,4 +1,3 @@
-# apps/resetpwd/views.py
 
 import logging
 from django.contrib.auth.tokens import PasswordResetTokenGenerator

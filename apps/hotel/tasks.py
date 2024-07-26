@@ -1,24 +1,14 @@
-# # apps/hotel/tasks.py
-
-# from celery import shared_task
-# from rest_framework.exceptions import ValidationError
-# from apps.hotel.models import Booking, Payment
-# from apps.hotel.serializers import BookingSerializer
-# from django.utils import timezone
-# from django.db import transaction
+from celery import shared_task
+from django.utils import timezone
+from apps.hotel.models import Room, Booking
 
 
-# @shared_task
-# def create_booking_and_payment(booking_data, payment_method):
-#     serializer = BookingSerializer(data=booking_data)
-#     if not serializer.is_valid():
-#         raise ValidationError(serializer.errors)
+@shared_task
+def update_room_status():
+    today = timezone.now().date()
+    expired_bookings = Booking.objects.filter(check_out_date__lt=today, room__status=Room.OCCUPIED)
 
-#     with transaction.atomic():
-#         booking_instance = serializer.save()
-#         Payment.objects.create(
-#             booking=booking_instance,
-#             amount=booking_instance.total_price,
-#             payment_date=timezone.now(),
-#             payment_method=payment_method,
-#         )
+    for booking in expired_bookings:
+        room = booking.room
+        room.status = Room.AVAILABLE
+        room.save()

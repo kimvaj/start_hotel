@@ -1,5 +1,6 @@
 from django.core.mail import EmailMessage
 import logging
+from django.core.mail import send_mail
 
 logger = logging.getLogger(__name__)
 

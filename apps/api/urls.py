@@ -23,7 +23,6 @@ from apps.hotel.views import (
     BookingViewSet,
     PaymentViewSet,
 )
-from apps.msg.views import SendSMSView
 from apps.resetpwd.views import (
     ChangePasswordView,
     RequestPasswordResetEmail,
@@ -73,8 +72,6 @@ urlpatterns = [
         ChangePasswordView.as_view(),
         name="change-password",
     ),
-    # sms
-    path("send-sms/", SendSMSView.as_view(), name="send_sms"),
     path("email-verify/", VerifyEmail.as_view(), name="email-verify"),
     path("logout/", LogoutAPIView.as_view(), name="logout"),
 ]

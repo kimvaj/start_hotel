@@ -98,10 +98,5 @@ class APIRootView(APIView):
                     reverse("api:payments-list")
                 ),
             },
-            "SMS": {
-                "sms": self.request.build_absolute_uri(
-                    reverse("api:send_sms")
-                ),
-            },
         }
         return Response(data)

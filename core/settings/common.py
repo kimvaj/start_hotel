@@ -28,10 +28,14 @@ THIRD_PARTY_APPS = [
     "rest_framework_simplejwt",
     "django_celery_beat",
     "django_celery_results",
-    # "rest_framework_simplejwt.token_blacklist",
+    # "rest_framework_simplejwt.token_blacklist"
 ]
 
-PROJECT_APPS = ["apps.accounts", "apps.hotel", "apps.resetpwd", "apps.msg"]
+PROJECT_APPS = [
+    "apps.accounts",
+    "apps.hotel",
+    "apps.resetpwd",
+]
 
 INSTALLED_APPS = (
     DJANGO_APPS
@@ -49,6 +53,7 @@ MIDDLEWARE = [
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
+    # 'django_otp.middleware.OTPMiddleware',
 ]
 
 REST_FRAMEWORK = {
@@ -98,13 +103,14 @@ SIMPLE_JWT = {
     "SLIDING_TOKEN_REFRESH_SERIALIZER": "rest_framework.simplejwt.serializers.TokenRefreshSlidingSerializer",
 }
 
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5242880
 
 ROOT_URLCONF = "core.urls"
 
 TEMPLATES = [
     {
         "BACKEND": "django.template.backends.django.DjangoTemplates",
-        "DIRS": [],
+        "DIRS": [os.path.join(BASE_DIR, "templates")],
         "APP_DIRS": True,
         "OPTIONS": {
             "context_processors": [
@@ -162,7 +168,6 @@ MEDIA_URL = "/media/"
 
 # Path where media is stored
 MEDIA_ROOT = os.path.join(BASE_DIR, "media/")
-
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/4.2/ref/settings/#default-auto-field

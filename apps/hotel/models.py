@@ -104,27 +104,27 @@ class Booking(BaseModel):
     def __str__(self):
         return f"{self.guest} booking for {self.room}"
 
-    def clean(self):
-        super().clean()
+    # def clean(self):
+    #     super().clean()
 
-        if self.check_out_date <= self.check_in_date:
-            raise ValidationError(
-                {
-                    "check_out_date": _(
-                        "Check-out date must be after check-in date."
-                    )
-                }
-            )
+    #     if self.check_out_date <= self.check_in_date:
+    #         raise ValidationError(
+    #             {
+    #                 "check_out_date": _(
+    #                     "Check-out date must be after check-in date."
+    #                 )
+    #             }
+    #         )
 
-        if self.check_in_date < timezone.now().date():
-            raise ValidationError(
-                {"check_in_date": _("Check-in date cannot be in the past.")}
-            )
+    #     if self.check_in_date < timezone.now().date():
+    #         raise ValidationError(
+    #             {"check_in_date": _("Check-in date cannot be in the past.")}
+    #         )
 
-    def save(self, *args, **kwargs):
-        # Validate the model
-        self.full_clean()
-        super().save(*args, **kwargs)
+    # def save(self, *args, **kwargs):
+    #     # Validate the model
+    #     self.full_clean()
+    #     super().save(*args, **kwargs)
 
 
 class Payment(BaseModel):
@@ -142,6 +142,7 @@ class Payment(BaseModel):
     booking = models.ForeignKey(
         Booking, on_delete=models.CASCADE, related_name="payment_booking"
     )
+    pdf_file = models.FileField(upload_to='payments/', null=True, blank=True)
     amount = models.DecimalField(max_digits=9, decimal_places=2, default=0)
     payment_date = models.DateField()
     payment_method = models.CharField(
@@ -149,3 +150,4 @@ class Payment(BaseModel):
         choices=PAYMENT_METHOD_CHOICES,
         default=PAYMENT_METHOD_CASH,
     )
+

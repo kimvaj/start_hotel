@@ -1,73 +1,52 @@
 from rest_framework import permissions
 
-from apps.accounts.models import User
 
-
-class BaseModelPermissions(permissions.BasePermission):
-    model_name = None
-
-    def get_permission_codename(self, action):
-        action_permissions = {
-            "list": f"view_{self.model_name}",
-            "retrieve": f"view_{self.model_name}",
-            "create": f"add_{self.model_name}",
-            "update": f"change_{self.model_name}",
-            "destroy": f"delete_{self.model_name}",
-        }
-        return action_permissions.get(action)
+class BasePermission(permissions.BasePermission):
+    model_name = ""
 
     def has_permission(self, request, view):
         if request.user.is_superuser:
             return True
 
-        required_permission = self.get_permission_codename(view.action)
-        if required_permission:
-            return request.user.has_perm(
-                f"{self.model_name}.{required_permission}"
-            )
-        return False
+        action_permissions = {
+            "list": f"{self.model_name}.view_{self.model_name}",
+            "retrieve": f"{self.model_name}.view_{self.model_name}",
+            "create": f"{self.model_name}.add_{self.model_name}",
+            "update": f"{self.model_name}.change_{self.model_name}",
+            "destroy": f"{self.model_name}.delete_{self.model_name}",
+        }
+
+        permission = action_permissions.get(view.action)
+        return request.user.has_perm(permission) if permission else False
 
 
-class UserPermissions(BaseModelPermissions):
+class UserPermissions(BasePermission):
     model_name = "user"
 
-    def has_object_permission(self, request, view, obj):
-        if request.user.is_superuser:
-            return True
 
-        if isinstance(obj, User) and obj == request.user:
-            return True
-
-        return super().has_permission(request, view)
-
-
-class HotelPermissions(BaseModelPermissions):
+class HotelPermissions(BasePermission):
     model_name = "hotel"
 
 
-class GuestPermissions(BaseModelPermissions):
+class GuestPermissions(BasePermission):
     model_name = "guest"
 
 
-class RoomTypePermissions(BaseModelPermissions):
+class RoomTypePermissions(BasePermission):
     model_name = "roomtype"
 
 
-class StaffPermissions(BaseModelPermissions):
-    model_name = "staff"
-
-    def has_permission(self, request, view):
-        if request.user.groups.filter(name="admin_no_role").exists():
-            return view.action in ["list", "retrieve", "destroy", "create"]
-
-
-class RoomPermissions(BaseModelPermissions):
+class RoomPermissions(BasePermission):
     model_name = "room"
 
 
-class BookingPermissions(BaseModelPermissions):
+class BookingPermissions(BasePermission):
     model_name = "booking"
 
 
-class PaymentPermissions(BaseModelPermissions):
+class PaymentPermissions(BasePermission):
     model_name = "payment"
+
+
+class StaffPermissions(BasePermission):
+    model_name = "staff"

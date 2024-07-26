@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <title>Payment PDF</title>
+    <style>
+        
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Playfair+Display:wght@400;700&display=swap');
+        /* Global body styling */
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            color: #333;
+            margin: 0;
+            padding: 0;
+            background-color: #f0f0f5;
+        }
+        /* Container for the main content */
+        .container {
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 30px;
+            background-color: #fff;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.1);
+            border: 1px solid #e0e0e0;
+        }
+        /* Heading styling */
+        h1 {
+            font-family: 'Playfair Display', serif;
+            text-align: center;
+            color: #2c3e50;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        /* Details section styling */
+        .details {
+            margin-top: 30px;
+            padding: 25px;
+            background: #fafafa;
+            border-radius: 10px;
+            border: 1px solid #e0e0e0;
+        }
+        .details p {
+            margin: 15px 0;
+            font-size: 1.1em;
+            line-height: 1.5;
+        }
+        .details strong {
+            color: #34495e;
+            font-weight: 500;
+        }
+        .details span {
+            display: block;
+            margin-top: 5px;
+            color: #555;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #999;
+            font-size: 0.9em;
+        }
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        .header img {
+            max-width: 100px;
+            border-radius: 50%;
+        }
+        .line {
+            width: 50px;
+            height: 3px;
+            background-color: #2c3e50;
+            margin: 0 auto 20px auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Main container -->
+    <div class="container">
+        <!-- Header section -->
+        <div class="header">
+            <img src="https://myhotelsite.com/logo.png" alt="Hotel Logo"> <!-- Hotel logo image -->
+            <div class="line"></div> <!-- Decorative horizontal line -->
+        </div>
+        <!-- Main heading -->
+        <h1>Payment Details</h1>
+        <!-- Payment details section -->
+        <div class="details">
+            <p><strong>Payment ID:</strong> <span>{{ payment.id }}</span></p> <!-- Payment ID -->
+            <p><strong>Booking ID:</strong> <span>{{ payment.booking.id }}</span></p> <!-- Booking ID -->
+            <p><strong>Amount:</strong> <span>{{ payment.amount }}</span></p> <!-- Payment amount -->
+            <p><strong>Payment Date:</strong> <span>{{ payment.payment_date }}</span></p> <!-- Payment date -->
+            <p><strong>Payment Method:</strong> <span>{{ payment.get_payment_method_display }}</span></p> <!-- Payment method -->
+        </div>
+        <!-- Footer section -->
+        <div class="footer">
+            <p>Thank you for your payment!</p> <!-- Thank you message -->
+            <p>&copy; 2024 Your My Hotel. All rights reserved.</p> <!-- Copyright notice -->
+        </div>
+    </div>
+</body>
+</html>

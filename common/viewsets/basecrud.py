@@ -45,5 +45,8 @@ class BaseCRUDViewSet(SoftDeleteMixin, BaseModelViewSet):
 
     def destroy(self, request, pk=None):
         instance = self.get_object(pk)
-        self.perform_destroy(instance)
-        return Response(status=status.HTTP_204_NO_CONTENT)
+        # self.perform_destroy(instance)
+        instance.delete()
+        return Response(
+            {"msg": "deletion is done"}, status=status.HTTP_204_NO_CONTENT
+        )
