@@ -17,6 +17,7 @@ from apps.accounts.views import (
 from apps.hotel.views import (
     HotelViewSet,
     GuestViewSet,
+    ReportAPIView,
     StaffViewSet,
     RoomTypeViewSet,
     RoomViewSet,
@@ -74,6 +75,7 @@ urlpatterns = [
     ),
     path("email-verify/", VerifyEmail.as_view(), name="email-verify"),
     path("logout/", LogoutAPIView.as_view(), name="logout"),
+    path("report/", ReportAPIView.as_view(), name="report"),
 ]
 
 urlpatterns += router.urls

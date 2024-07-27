@@ -1,26 +1,47 @@
-# from fpdf import FPDF
-# from io import BytesIO
+from datetime import datetime
+from django.utils import timezone
+from rest_framework import status
+from rest_framework.response import Response
 
-# from apps.hotel.models import Payment
 
+def validate_date_range(start_date, end_date):
+    today = timezone.now().date()
+    if not start_date:
+        start_date = today.strftime("%Y-%m-%d")
+    if not end_date:
+        end_date = today.strftime("%Y-%m-%d")
 
-# def generate_payment_pdf(payment):
-#     pdf = FPDF()
-#     pdf.add_page()
-#     pdf.set_font("Arial", size=12)
+    try:
+        start_date = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end_date = datetime.strptime(end_date, "%Y-%m-%d").date()
+    except ValueError:
+        return (
+            None,
+            None,
+            Response(
+                {"error": "Invalid date format. Use YYYY-MM-DD."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
 
-#     pdf.cell(200, 10, txt="Payment Receipt", ln=True, align='C')
+    if start_date > end_date:
+        return (
+            None,
+            None,
+            Response(
+                {"error": "Start date must be before or equal to end date."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
 
-#     pdf.cell(200, 10, txt=f"Payment ID: {payment.id}", ln=True)
-#     pdf.cell(200, 10, txt=f"Booking ID: {payment.booking.id}", ln=True)
-#     pdf.cell(200, 10, txt=f"Guest: {payment.booking.guest.first_name} {payment.booking.guest.last_name}", ln=True)
-#     pdf.cell(200, 10, txt=f"Room Number: {payment.booking.room.room_number}", ln=True)
-#     pdf.cell(200, 10, txt=f"Payment Date: {payment.payment_date}", ln=True)
-#     pdf.cell(200, 10, txt=f"Amount: {payment.amount}", ln=True)
-#     pdf.cell(200, 10, txt=f"Payment Method: {dict(Payment.PAYMENT_METHOD_CHOICES).get(payment.payment_method)}", ln=True)
+    if start_date > today or end_date > today:
+        return (
+            None,
+            None,
+            Response(
+                {"error": "Dates cannot be in the future."},
+                status=status.HTTP_400_BAD_REQUEST,
+            ),
+        )
 
-#     pdf_content = BytesIO()
-#     pdf.output(pdf_content)
-#     pdf_content.seek(0)
-
-#     return pdf_content.getvalue()
+    return start_date, end_date, None

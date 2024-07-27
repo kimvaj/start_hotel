@@ -95,3 +95,8 @@ class PaymentSerializer(serializers.ModelSerializer):
                 {"check_in_date": "Check-in date cannot be in the past."}
             )
         return data
+
+
+class ReportsSerializers(serializers.Serializer):
+    total_bookings = serializers.IntegerField()
+    total_guests = serializers.IntegerField()

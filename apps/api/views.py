@@ -97,6 +97,9 @@ class APIRootView(APIView):
                 "payments": self.request.build_absolute_uri(
                     reverse("api:payments-list")
                 ),
+                "reports": self.request.build_absolute_uri(
+                    reverse("api:report")
+                ),
             },
         }
         return Response(data)
